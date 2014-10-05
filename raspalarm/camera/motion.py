@@ -148,6 +148,8 @@ class Detector(object):
         self._detecting = 0
         self.capturer.join()
 
+    stop = stop_detect
+
 if __name__ == '__main__':
     detector = Detector(25, 25)
     detector = Detector(40, 200)
