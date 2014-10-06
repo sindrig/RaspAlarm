@@ -71,7 +71,6 @@ class Streamer(object):
         def handler(signum, frame):
             print 'Killed with signum %s' % signum
             self.stop_stream()
-        signal.signal(signal.SIGKILL, handler)
         signal.signal(signal.SIGTERM, handler)
         signal.signal(signal.SIGINT, handler)
 
