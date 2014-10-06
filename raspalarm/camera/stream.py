@@ -28,9 +28,10 @@ class Capturer(Thread):
     '''
     _running = True
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.event = Event()
         self.q = Queue()
+        super(Capturer, self).__init__(*args, **kwargs)
 
     def terminate(self):
         self._running = False
@@ -62,8 +63,8 @@ class Capturer(Thread):
 
 
 class Streamer(object):
-    width = 800
-    height = 600
+    width = 640
+    height = 480
     _streaming = 0
 
     def start_stream(self):
@@ -123,7 +124,7 @@ if __name__ == '__main__':
     s.start_stream()
     try:
         while s.is_streaming():
-            print len(s.get_image())
+            print len(s.get_image().read())
             time.sleep(2)
     except Exception:
         import traceback; traceback.print_exc();
