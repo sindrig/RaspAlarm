@@ -71,6 +71,7 @@ class Streamer(object):
         self.capturer.start()
         def handler(signum, frame):
             print 'Killed with signum %s' % signum
+            import pdb; pdb.set_trace()
             self.stop_stream()
             if signum == signal.SIGINT:
                 raise KeyboardInterrupt('SIGINT')
