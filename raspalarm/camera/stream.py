@@ -70,6 +70,8 @@ class Streamer(object):
             Wrapper for _start_stream. Catches all exceptions and makes sure
             we terminate our worker thread.
         '''
+        if self.is_streaming():
+            raise RuntimeError('Streamer is already streaming')
         try:
             self._start_stream()
         except KeyboardInterrupt:
