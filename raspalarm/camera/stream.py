@@ -10,7 +10,7 @@ import picamera
 
 IMAGE_REFRESH_TIME = 1
 
-NEWEST_IMAGE = None
+NEWEST_IMAGE = (0, [])
 
 
 class Capturer(Thread):
@@ -71,13 +71,11 @@ class Streamer(object):
         self.capturer.start()
         def handler(signum, frame):
             print 'Killed with signum %s' % signum
-            import pdb; pdb.set_trace()
             self.stop_stream()
             if signum == signal.SIGINT:
                 raise KeyboardInterrupt('SIGINT')
             else:
                 raise OSError('Unknown error')
-        signal.signal(signal.SIGKILL, handler)
         signal.signal(signal.SIGTERM, handler)
         signal.signal(signal.SIGINT, handler)
 
@@ -100,7 +98,7 @@ class Streamer(object):
     def get_image(self, lasttime):
         assert self._streaming, 'You have to call start_stream'
         i = 0
-        while (not NEWEST_IMAGE or lasttime == NEWEST_IMAGE[0]) and i < 20:
+        while (not NEWEST_IMAGE[0] or lasttime == NEWEST_IMAGE[0]) and i < 20:
             i += 1
             time.sleep(IMAGE_REFRESH_TIME / 10.0)
         return NEWEST_IMAGE[1]
@@ -110,10 +108,10 @@ if __name__ == '__main__':
     s.start_stream()
     try:
         while s.is_streaming():
-            print NEWEST_IMAGE
+            print len(s.get_image(1))
             time.sleep(2)
     except Exception:
-        pass
+        import traceback; traceback.print_exc();
     finally:
         try:
             s.stop_stream()
