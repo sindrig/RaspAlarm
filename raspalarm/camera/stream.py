@@ -24,6 +24,7 @@ class Capturer(Thread):
         self._running = False
 
     def run(self):
+        global NEWEST_IMAGE
         width, height = self._Thread__args
         with picamera.PiCamera() as camera:
             print 'self._running: %s' % self._running
@@ -72,6 +73,11 @@ class Streamer(object):
             print 'Killed with signum %s' % signum
             import pdb; pdb.set_trace()
             self.stop_stream()
+            if signum == signal.SIGINT:
+                raise KeyboardInterrupt('SIGINT')
+            else:
+                raise OSError('Unknown error')
+        signal.signal(signal.SIGKILL, handler)
         signal.signal(signal.SIGTERM, handler)
         signal.signal(signal.SIGINT, handler)
 
@@ -85,6 +91,12 @@ class Streamer(object):
 
     stop = stop_stream
 
+    def is_streaming(self):
+        '''
+            So we can know if a stream is currently running
+        '''
+        return self._streaming
+
     def get_image(self, lasttime):
         assert self._streaming, 'You have to call start_stream'
         i = 0
@@ -97,7 +109,7 @@ if __name__ == '__main__':
     s = Streamer()
     s.start_stream()
     try:
-        while 1:
+        while s.is_streaming():
             print NEWEST_IMAGE
             time.sleep(2)
     except Exception:
