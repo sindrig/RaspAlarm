@@ -1,8 +1,11 @@
 import json
+import os
 from wsgiref.util import setup_testing_defaults
 from wsgiref.simple_server import make_server
 
 from raspalarm import get_camera_capturer, CaptureTypes
+
+BASE_DIR = os.path.split(os.path.abspath(__file__))[0]
 
 
 class Portal(object):
@@ -22,8 +25,13 @@ p = Portal()
 def application(environ, start_response):
     setup_testing_defaults(environ)
 
-    function = environ.get('PATH_INFO', '').replace('/', '')
-    if not hasattr(p, function):
+    function = environ.get('PATH_INFO', '').replace('/', '') or 'index.html'
+    if os.path.exists(os.path.join(BASE_DIR, 'www', function)):
+        status = '200 OK'
+        headers = None
+        with open(os.path.join(BASE_DIR, 'www', function), 'r') as f:
+            res = f.read()
+    elif not hasattr(p, function):
         status = '404 NOT FOUND'
         headers = [('Content-type', 'text/plain')]
         res = ''
@@ -33,19 +41,27 @@ def application(environ, start_response):
 
     if not headers:
         if isinstance(res, (str, unicode)):
-            headers = [('Content-type', 'text/plain')]
+            headers = [('Content-type', get_content_type(function))]
         else:
             headers = [('Content-type', 'application/json')]
             res = json.dumps(res)
 
     start_response(status, headers)
 
-    return res
+    if res:
+        return res
 
     ret = ["%s: %s\n" % (key, value)
            for key, value in environ.iteritems()]
     return ret
 
+
+def get_content_type(function):
+    if function.endswith('.html'):
+        return 'text/html'
+    elif function.endswith('.js'):
+        return 'text/javascript'
+    return 'text/plain'
 
 
 if __name__ == '__main__':

@@ -32,12 +32,15 @@ var get_image = function(){
         var img = $('<img>').css('zIndex', '-1').attr('src', url);
         img.one('load', function(){
             $(this).css('zIndex', thisnum);
+            $('.old').remove();
             get_image();
         }).each(function(){
             if(this.complete){
                 $(this).load();
             }
         });
-        img.appendTo($('.stream'));
+        var stream = $('.stream');
+        stream.find('img').addClass('old');
+        img.appendTo(stream);
     }
 }
