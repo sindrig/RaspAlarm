@@ -22,15 +22,18 @@ class Portal(object):
 
 p = Portal()
 
+BLOCK_SIZE = 16 * 4096
+
 def application(environ, start_response):
     setup_testing_defaults(environ)
 
     function = environ.get('PATH_INFO', '').replace('/', '') or 'index.html'
     if os.path.exists(os.path.join(BASE_DIR, 'www', function)):
         status = '200 OK'
-        headers = None
+        headers = [('Content-type', get_content_type(function))]
+        start_response(status, headers)
         with open(os.path.join(BASE_DIR, 'www', function), 'r') as f:
-            res = f.read()
+            return environ.get('wsgi.file_wrapper')(f, BLOCK_SIZE)
     elif not hasattr(p, function):
         status = '404 NOT FOUND'
         headers = [('Content-type', 'text/plain')]
