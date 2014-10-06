@@ -50,7 +50,7 @@ def application(environ, start_response):
 
 
 if __name__ == '__main__':
-    PORT = '8080'
+    PORT = 8080
     httpd = make_server('0.0.0.0', PORT, application)
     print 'Serving on port %s' % PORT
     httpd.serve_forever()
