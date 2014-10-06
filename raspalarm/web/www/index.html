@@ -1,7 +1,7 @@
 <html>
     <head>
         <title>RaspAlarm Portal</title>
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <script src="/jquery-2.1.1.min.js"></script>
         <script>
         $(function(){
             $('button').on('click', process_request);
@@ -12,6 +12,9 @@
             switch($(this).attr('id')){
                 case 'startstream':
                     start_stream();
+                    break;
+                case 'stopstream':
+                    stop_stream();
                     break;
             }
         }
@@ -27,7 +30,7 @@
                         get_image();
                     }
                 }
-            })
+            });
         };
 
         var get_image = function(){
@@ -53,6 +56,18 @@
             }
         }
 
+        var stop_stream = function(){
+            STREAMING = false;
+            $.ajax('/stop_streaming', {
+                success: function(data){
+                    if(!data.success){
+                        alert('Error!');
+                        alert(data);
+                    }
+                }
+            });
+        }
+
         </script>
         <style>
             .stream {
@@ -71,6 +86,7 @@
         </div>
         <div class="buttons">
             <button id="startstream">Start streaming!</button>
+            <button id="stopstream">Stop streaming!</button>
         </div>
     </body>
 </html>

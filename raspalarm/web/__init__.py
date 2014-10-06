@@ -10,16 +10,22 @@ BLOCK_SIZE = 16 * 4096
 
 
 class Portal(object):
+    capturer = None
 
     def start_streaming(self, env):
-        self.streamer = get_camera_capturer(CaptureTypes.STREAMER)()
-        self.streamer.start_stream()
+        self.capturer = get_camera_capturer(CaptureTypes.STREAMER)()
+        self.capturer.start_stream()
         return None, {'success': True}
 
     def get_stream_image(self, env):
-        stream = self.streamer.get_image()
+        stream = self.capturer.get_image()
         headers = [('Content-Type', 'image/jpeg')]
         return headers, env['wsgi.file_wrapper'](stream, BLOCK_SIZE)
+
+    def stop_streaming(self, env):
+        if self.capturer:
+            self.capturer.stop()
+        return None, {'success': True}
 
 p = Portal()
 
