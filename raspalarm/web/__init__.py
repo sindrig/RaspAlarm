@@ -6,6 +6,7 @@ from wsgiref.simple_server import make_server
 from raspalarm import get_camera_capturer, CaptureTypes
 
 BASE_DIR = os.path.split(os.path.abspath(__file__))[0]
+BLOCK_SIZE = 16 * 4096
 
 
 class Portal(object):
@@ -18,11 +19,10 @@ class Portal(object):
     def get_stream_image(self, env):
         stream = self.streamer.get_image()
         headers = [('Content-Type', 'image/jpeg')]
-        return headers, stream
+        return headers, env['wsgi.file_wrapper'](stream, BLOCK_SIZE)
 
 p = Portal()
 
-BLOCK_SIZE = 16 * 4096
 
 def application(environ, start_response):
     setup_testing_defaults(environ)
@@ -32,8 +32,8 @@ def application(environ, start_response):
         status = '200 OK'
         headers = [('Content-type', get_content_type(function))]
         start_response(status, headers)
-        with open(os.path.join(BASE_DIR, 'www', function), 'r') as f:
-            return environ.get('wsgi.file_wrapper')(f, BLOCK_SIZE)
+        f = open(os.path.join(BASE_DIR, 'www', function), 'r')
+        return environ.get('wsgi.file_wrapper')(f, BLOCK_SIZE)
     elif not hasattr(p, function):
         status = '404 NOT FOUND'
         headers = [('Content-type', 'text/plain')]

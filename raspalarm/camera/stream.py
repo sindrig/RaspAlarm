@@ -9,8 +9,6 @@ import picamera
 # from PIL import Image
 
 
-IMAGE_REFRESH_TIME = 1
-
 
 class ImageRequest(object):
     def __init__(self):
@@ -23,8 +21,8 @@ class ImageRequest(object):
 
 class Capturer(Thread):
     '''
-        A thread that takes an image and stores it in a global variable
-        every IMAGE_REFRESH_TIME seconds.
+        A thread that takes an image and returns it to a ImageRequest
+        stream.
     '''
     _running = True
 
