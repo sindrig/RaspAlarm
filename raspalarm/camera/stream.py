@@ -1,7 +1,8 @@
 import traceback
 import time
 import io
-from threading import Thread
+from threading import Thread, Event
+from Queue import Queue
 import signal
 
 import picamera
@@ -10,8 +11,15 @@ import picamera
 
 IMAGE_REFRESH_TIME = 1
 
-NEWEST_IMAGE = (0, [])
 
+class ImageRequest(object):
+    def __init__(self):
+        self.stream = io.BytesIO()
+        self.finished = 0
+
+    def notify(self):
+        self.stream.seek(0)
+        self.finished = 1
 
 class Capturer(Thread):
     '''
@@ -20,11 +28,22 @@ class Capturer(Thread):
     '''
     _running = True
 
+    def __init__(self):
+        self.event = Event()
+        self.q = Queue()
+
     def terminate(self):
         self._running = False
 
+    def get_image(self):
+        req = ImageRequest()
+        self.q.put(req)
+        self.event.set()
+        while not req.finished:
+            time.sleep(0.05)
+        return req.stream
+
     def run(self):
-        global NEWEST_IMAGE
         width, height = self._Thread__args
         with picamera.PiCamera() as camera:
             print 'self._running: %s' % self._running
@@ -32,15 +51,14 @@ class Capturer(Thread):
             camera.start_preview()
             time.sleep(2)
             while self._running:
-                print 'self._running: %s' % self._running
-                stream = io.BytesIO()
-                print 'Starting capture...'
-                camera.capture(stream, format='jpeg')
-                stream.seek(0)
-                # NEWEST_IMAGE = (time.time(), Image.open(stream))
-                NEWEST_IMAGE = (time.time(), stream.read())
-                print 'Image taken!'
-                time.sleep(IMAGE_REFRESH_TIME)
+                if self.event.wait(1):
+                    req = self.q.get()
+                    print 'self._running: %s' % self._running
+                    print 'Starting capture...'
+                    camera.capture(req.stream, format='jpeg')
+                    req.notify()
+                    print 'Image taken!'
+                    self.event.clear()
 
 
 class Streamer(object):
@@ -95,20 +113,17 @@ class Streamer(object):
         '''
         return self._streaming
 
-    def get_image(self, lasttime):
+    def get_image(self):
         assert self._streaming, 'You have to call start_stream'
-        i = 0
-        while (not NEWEST_IMAGE[0] or lasttime == NEWEST_IMAGE[0]) and i < 20:
-            i += 1
-            time.sleep(IMAGE_REFRESH_TIME / 10.0)
-        return NEWEST_IMAGE[1]
+        return self.capturer.get_image()
+
 
 if __name__ == '__main__':
     s = Streamer()
     s.start_stream()
     try:
         while s.is_streaming():
-            print len(s.get_image(1))
+            print len(s.get_image())
             time.sleep(2)
     except Exception:
         import traceback; traceback.print_exc();

@@ -13,8 +13,7 @@ class Portal(object):
         return None, {'success': True}
 
     def get_stream_image(self, env):
-        lastid = 0
-        stream = self.streamer.get_image(lastid)
+        stream = self.streamer.get_image()
         headers = [('Content-Type', 'image/jpeg')]
         return headers, stream
 
