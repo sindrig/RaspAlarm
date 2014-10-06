@@ -13,6 +13,8 @@ class Portal(object):
     capturer = None
 
     def start_streaming(self, env):
+        if self.capturer and self.capturer.is_streaming():
+            return None, {'success': False, 'error': 'Already streaming!'}
         self.capturer = get_camera_capturer(CaptureTypes.STREAMER)
         self.capturer.start_stream()
         return None, {'success': True}

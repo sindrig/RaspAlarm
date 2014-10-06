@@ -28,7 +28,9 @@
                     if(data.success){
                         STREAMING = true;
                         get_image();
-                    }
+                     }else{
+                         alert(data.error);
+                     }
                 }
             });
         };
