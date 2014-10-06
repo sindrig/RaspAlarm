@@ -1,23 +1,34 @@
-import cherrypy
-from cherrypy.lib import file_generator
 from raspalarm import get_camera_capturer, CaptureTypes
-import config
 
-
+from wsgiref.util import setup_testing_defaults
+from wsgiref.simple_server import make_server
 class Portal(object):
 
-    @cherrypy.expose
     def start_streaming(self):
         self.streamer = get_camera_capturer(CaptureTypes.STREAMER)()
         self.streamer.start_stream()
 
-    @cherrypy.expose
     def get_stream_image(self, lastid):
         stream = self.streamer.get_image(lastid)
         cherrypy.response.headers['Content-Type'] = 'image/jpeg'
         return file_generator(stream)
 
+def application(environ, start_response):
+    setup_testing_defaults(environ)
+
+    status = '200 OK'
+    headers = [('Content-type', 'text/plain')]
+
+    start_response(status, headers)
+
+    ret = ["%s: %s\n" % (key, value)
+           for key, value in environ.iteritems()]
+    return ret
+
+
 
 if __name__ == '__main__':
-    cherrypy.config.update(config.conf)
-    cherrypy.quickstart(Portal())
+    PORT = '8080'
+    httpd = make_server('0.0.0.0', PORT, application)
+    print 'Serving on port %s' % PORT
+    httpd.serve_forever()
