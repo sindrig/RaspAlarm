@@ -1,6 +1,7 @@
 import cherrypy
 from cherrypy.lib import file_generator
 from raspalarm import get_camera_capturer, CaptureTypes
+import config
 
 
 class Portal(object):
@@ -18,4 +19,5 @@ class Portal(object):
 
 
 if __name__ == '__main__':
+    cherrypy.config.update(config.conf)
     cherrypy.quickstart(Portal())

@@ -25,13 +25,17 @@ class Capturer(Thread):
     def run(self):
         width, height = self._Thread__args
         with picamera.PiCamera() as camera:
+            print 'self._running: %s' % self._running
             while self._running:
+                print 'self._running: %s' % self._running
                 camera.resolution = (width, height)
                 stream = io.BytesIO()
+                print 'Starting capture...'
                 camera.capture(stream, format='jpeg')
                 stream.seek(0)
                 # NEWEST_IMAGE = (time.time(), Image.open(stream))
                 NEWEST_IMAGE = (time.time(), stream.read())
+                print 'Image taken!'
                 time.sleep(IMAGE_REFRESH_TIME)
 
 
@@ -46,18 +50,14 @@ class Streamer(object):
             we terminate our worker thread.
         '''
         try:
-            self._start_detect(callback)
+            self._start_stream()
         except KeyboardInterrupt:
+            traceback.print_exc()
             pass
         except Exception:
             traceback.print_exc()
-        finally:
-            try:
-                self.capturer.terminate()
-            except Exception:
-                traceback.print_exc()
 
-    def _start_stream(self, callback):
+    def _start_stream(self):
         '''
             Starts our capturer
         '''
@@ -79,7 +79,9 @@ class Streamer(object):
 
     def get_image(self, lasttime):
         assert self._streaming, 'You have to call start_stream'
-        while not NEWEST_IMAGE or lasttime == NEWEST_IMAGE[0]:
+        i = 0
+        while (not NEWEST_IMAGE or lasttime == NEWEST_IMAGE[0]) and i < 20:
+            i += 1
             time.sleep(IMAGE_REFRESH_TIME / 10.0)
         return NEWEST_IMAGE[1]
 
