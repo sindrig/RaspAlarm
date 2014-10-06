@@ -70,6 +70,7 @@ class Streamer(object):
         self.capturer.start()
         def handler(signum, frame):
             print 'Killed with signum %s' % signum
+            import pdb; pdb.set_trace()
             self.stop_stream()
         signal.signal(signal.SIGTERM, handler)
         signal.signal(signal.SIGINT, handler)
