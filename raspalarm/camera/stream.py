@@ -26,9 +26,10 @@ class Capturer(Thread):
         width, height = self._Thread__args
         with picamera.PiCamera() as camera:
             print 'self._running: %s' % self._running
+            camera.resolution = (width, height)
+            time.sleep(2)
             while self._running:
                 print 'self._running: %s' % self._running
-                camera.resolution = (width, height)
                 stream = io.BytesIO()
                 print 'Starting capture...'
                 camera.capture(stream, format='jpeg')
