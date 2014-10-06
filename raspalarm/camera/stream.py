@@ -2,6 +2,7 @@ import traceback
 import time
 import io
 from threading import Thread
+import signal
 
 import picamera
 # from PIL import Image
@@ -27,6 +28,7 @@ class Capturer(Thread):
         with picamera.PiCamera() as camera:
             print 'self._running: %s' % self._running
             camera.resolution = (width, height)
+            camera.start_preview()
             time.sleep(2)
             while self._running:
                 print 'self._running: %s' % self._running
@@ -53,7 +55,6 @@ class Streamer(object):
         try:
             self._start_stream()
         except KeyboardInterrupt:
-            traceback.print_exc()
             pass
         except Exception:
             traceback.print_exc()
@@ -67,6 +68,12 @@ class Streamer(object):
             args=(self.width, self.height)
         )
         self.capturer.start()
+        def handler(signum, frame):
+            print 'Killed with signum %s' % signum
+            self.stop_stream()
+        signal.signal(signal.SIGKILL, handler)
+        signal.signal(signal.SIGTERM, handler)
+        signal.signal(signal.SIGINT, handler)
 
     def stop_stream(self):
         '''
