@@ -86,4 +86,8 @@ class Streamer(object):
         return NEWEST_IMAGE[1]
 
 if __name__ == '__main__':
-    pass
+    s = Streamer()
+    s.start_stream()
+    while 1:
+        print NEWEST_IMAGE
+        sleep(2)
