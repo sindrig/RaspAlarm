@@ -13,7 +13,7 @@ class Portal(object):
     capturer = None
 
     def start_streaming(self, env):
-        self.capturer = get_camera_capturer(CaptureTypes.STREAMER)()
+        self.capturer = get_camera_capturer(CaptureTypes.STREAMER)
         self.capturer.start_stream()
         return None, {'success': True}
 
