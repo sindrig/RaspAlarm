@@ -38,34 +38,43 @@ class Capturer(Thread):
         req = ImageRequest()
         self.q.put(req)
         self.event.set()
-        while not req.finished:
+        start = time.time()
+        while not req.finished and time.time() - start < 10:
             time.sleep(0.05)
         return req.stream
 
     def run(self):
-        width, height = self._Thread__args
+        options = self._Thread__args[0]
+        if not all(isinstance(x, int) or x.isdigit() for x in options.values()):
+            raise TypeError('All options should be integers')
         with picamera.PiCamera() as camera:
             print 'self._running: %s' % self._running
-            camera.resolution = (width, height)
             camera.start_preview()
+            camera.resolution = (options['width'], options['height'])
+            camera.brightness = options['brightness']
+            camera.contrast = options['contrast']
             time.sleep(2)
             while self._running:
                 if self.event.wait(1):
                     req = self.q.get()
-                    print 'self._running: %s' % self._running
                     print 'Starting capture...'
-                    camera.capture(req.stream, format='jpeg')
-                    req.notify()
+                    # time.sleep(0.5)
+                    camera.capture(
+                        req.stream,
+                        format='jpeg',
+                        # use_video_port=True,
+                        thumbnail=None
+                    )
                     print 'Image taken!'
-                    self.event.clear()
+                    req.notify()
+                    if self.q.empty():
+                        self.event.clear()
 
 
 class Streamer(object):
-    width = 640
-    height = 480
     _streaming = 0
 
-    def start_stream(self):
+    def start_stream(self, options):
         '''
             Wrapper for _start_stream. Catches all exceptions and makes sure
             we terminate our worker thread.
@@ -73,26 +82,26 @@ class Streamer(object):
         if self.is_streaming():
             raise RuntimeError('Streamer is already streaming')
         try:
-            self._start_stream()
+            self._start_stream(options)
         except KeyboardInterrupt:
             pass
         except Exception:
             traceback.print_exc()
 
-    def _start_stream(self):
+    def _start_stream(self, options):
         '''
             Starts our capturer
         '''
         self._streaming = 1
         self.capturer = Capturer(
-            args=(self.width, self.height)
+            args=(options, )
         )
         self.capturer.start()
         def handler(signum, frame):
             print 'Killed with signum %s' % signum
             self.stop_stream()
             if signum == signal.SIGINT:
-                raise KeyboardInterrupt('SIGINT')
+                raise KeyboardInterrupt()
             else:
                 raise OSError('Unknown error')
         signal.signal(signal.SIGTERM, handler)
@@ -112,12 +121,13 @@ class Streamer(object):
         '''
             So we can know if a stream is currently running
         '''
+        if self._streaming and not self.capturer._running:
+            self._streaming = False
         return self._streaming
 
     def get_image(self):
         assert self._streaming, 'You have to call start_stream'
         return self.capturer.get_image()
-
 
 if __name__ == '__main__':
     s = Streamer()

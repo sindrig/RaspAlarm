@@ -2,79 +2,18 @@
     <head>
         <title>RaspAlarm Portal</title>
         <script src="/jquery-2.1.1.min.js"></script>
-        <script>
-        $(function(){
-            $('button').on('click', process_request);
-        });
-
-        var process_request = function(evt){
-            evt.preventDefault()
-            switch($(this).attr('id')){
-                case 'startstream':
-                    start_stream();
-                    break;
-                case 'stopstream':
-                    stop_stream();
-                    break;
-            }
-        }
-
-        STREAMING = false;
-        STREAM_NUM_IMAGE = 0;
-
-        var start_stream = function(){
-            $.ajax('/start_streaming', {
-                success: function(data){
-                    if(data.success){
-                        STREAMING = true;
-                        get_image();
-                     }else{
-                         alert(data.error);
-                     }
-                }
-            });
-        };
-
-        var get_image = function(){
-            if(STREAMING){
-                var thisnum = STREAM_NUM_IMAGE++;
-                var url = '/get_stream_image?_='+(thisnum);
-                var img = $('<img>')
-                    .css('zIndex', '-1')
-                    .css('position', 'absolute')
-                    .attr('src', url);
-                img.one('load', function(){
-                    $(this).css('zIndex', thisnum);
-                    $('.old').remove();
-                    get_image();
-                }).each(function(){
-                    if(this.complete){
-                        $(this).load();
-                    }
-                });
-                var stream = $('.stream');
-                stream.find('img').addClass('old');
-                img.appendTo(stream);
-            }
-        }
-
-        var stop_stream = function(){
-            STREAMING = false;
-            $.ajax('/stop_streaming', {
-                success: function(data){
-                    if(!data.success){
-                        alert('Error!');
-                        alert(data);
-                    }
-                }
-            });
-        }
-
-        </script>
+        <script src="/app.js"></script>
         <style>
             .stream {
-                height: 600;
-                widht: 800;
+                height: 600px;
+                width: 800px;
+            }
+            #streamplaceholder div {
+                float: left;
+            }
+            #streamplaceholder {
+                height: 600px;
+                width: 100%;
             }
             .buttons {
                 width: 100%;
@@ -83,12 +22,51 @@
         </style>
     </head>
     <body>
-        <div class="stream">
+        <div id="streamplaceholder">
+            <div class="stream">
 
+            </div>
+            <div class="control">
+                <label for="id_brightness">Brightness</label>
+                <select name="brightness" id="id_brightness">
+                    <option value="0">0</option>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="30">30</option>
+                    <option value="40">40</option>
+                    <option value="50" selected="selected">50</option>
+                    <option value="60">60</option>
+                    <option value="70">70</option>
+                    <option value="80">80</option>
+                    <option value="90">90</option>
+                    <option value="100">100</option>
+                </select>
+                <label for="id_contrast">Contrast</label>
+                <select name="contrast">
+                    <option value="-100">-100</option>
+                    <option value="-80">-80</option>
+                    <option value="-60">-60</option>
+                    <option value="-40">-40</option>
+                    <option value="-20">-20</option>
+                    <option value="0" selected="selected">0</option>
+                    <option value="20">20</option>
+                    <option value="40">40</option>
+                    <option value="60">60</option>
+                    <option value="80">80</option>
+                    <option value="100">100</option>
+                </select>
+                <br />
+                <label for="id_width">Width</label>
+                <input name="width" id="id_width" type="text" value="640" />
+                <label for="id_height">Height</label>
+                <input name="height" id="id_height" type="text" value="480" />
+            </div>
         </div>
         <div class="buttons">
             <button id="startstream">Start streaming!</button>
             <button id="stopstream">Stop streaming!</button>
+            <button id="arm">Arm!</button>
+            <button id="disarm">Disarm!</button>
         </div>
     </body>
 </html>

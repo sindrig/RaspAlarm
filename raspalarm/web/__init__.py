@@ -1,5 +1,7 @@
+#!/usr/bin/env python
 import json
 import os
+import urlparse
 from wsgiref.util import setup_testing_defaults
 from wsgiref.simple_server import make_server
 
@@ -16,7 +18,11 @@ class Portal(object):
         if self.capturer and self.capturer.is_streaming():
             return None, {'success': False, 'error': 'Already streaming!'}
         self.capturer = get_camera_capturer(CaptureTypes.STREAMER)
-        self.capturer.start_stream()
+        options = {}
+        for k, v in self._parse_params(env['QUERY_STRING']).items():
+            options[k.strip()] = int(v[0])
+
+        self.capturer.start_stream(options)
         return None, {'success': True}
 
     def get_stream_image(self, env):
@@ -28,6 +34,10 @@ class Portal(object):
         if self.capturer:
             self.capturer.stop()
         return None, {'success': True}
+
+
+    def _parse_params(self, qs):
+        return urlparse.parse_qs(qs)
 
 p = Portal()
 
