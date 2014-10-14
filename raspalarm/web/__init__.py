@@ -16,7 +16,10 @@ class Portal(object):
 
     def start_streaming(self, env):
         if self.capturer and self.capturer.is_streaming():
-            return None, {'success': False, 'error': 'Already streaming!'}
+            # Since we are already ready to start serving pictures,
+            # we don't have to tell the client anything other than OK
+            return None, {'success': True}
+            # return None, {'success': False, 'error': 'Already streaming!'}
         self.capturer = get_camera_capturer(CaptureTypes.STREAMER)
         options = {}
         for k, v in self._parse_params(env['QUERY_STRING']).items():
