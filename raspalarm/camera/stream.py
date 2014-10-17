@@ -56,16 +56,29 @@ class Capturer(Thread):
             camera.contrast = options['contrast']
             time.sleep(2)
             while self._running:
+                if not self.event.is_set():
+                    # We have not yet received a request, so we take a picture
+                    # and maybe when we are done we have received a request
+                    last_pic = io.BytesIO()
+                    camera.capture(last_pic, format='jpeg', thumbnail=None)
+                    last_pic_time = time.time()
+                else:
+                    last_pic_time = None
                 if self.event.wait(1):
                     req = self.q.get()
                     print 'Starting capture...'
                     # time.sleep(0.5)
-                    camera.capture(
-                        req.stream,
-                        format='jpeg',
-                        # use_video_port=True,
-                        thumbnail=None
-                    )
+                    if last_pic_time and time.time() - last_pic_time < 0.5:
+                        # If our last image is less then 0.5 seconds old, send
+                        # that one to reduce wait time
+                        req.stream = last_pic
+                    else:
+                        camera.capture(
+                            req.stream,
+                            format='jpeg',
+                            # use_video_port=True,
+                            thumbnail=None
+                        )
                     print 'Image taken!'
                     req.notify()
                     if self.q.empty():
