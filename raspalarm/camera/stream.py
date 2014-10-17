@@ -41,6 +41,7 @@ class Capturer(Thread):
         start = time.time()
         while not req.finished and time.time() - start < 10:
             time.sleep(0.05)
+        print 'image taken in %0.2f seconds' % (time.time() - start)
         return req.stream
 
     def run(self):
@@ -73,12 +74,19 @@ class Capturer(Thread):
 
 class Streamer(object):
     _streaming = 0
+    options = {
+        'width': 640,
+        'height': 480,
+        'brightness': 50,
+        'contrast': 0
+    }
 
-    def start_stream(self, options):
+    def start_stream(self, options={}):
         '''
             Wrapper for _start_stream. Catches all exceptions and makes sure
             we terminate our worker thread.
         '''
+        options = options or self.options
         if self.is_streaming():
             raise RuntimeError('Streamer is already streaming')
         try:

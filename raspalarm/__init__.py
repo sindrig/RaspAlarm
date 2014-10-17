@@ -16,3 +16,10 @@ def get_camera_capturer(_type, *args, **kwargs):
     else:
         raise NotImplementedError('Type %s not implemented yet' % _type)
     return _RUNNING_CAPTURER
+
+
+def arm():
+    pass
+
+def disarm():
+    pass
