@@ -1,14 +1,24 @@
 import traceback
+import os
 import datetime
 import time
 from Queue import Queue
 from threading import Thread
+
 import picamera
 import picamera.array
+
+from raspalarm.conf import settings
 
 
 QUEUE_WAIT_TIME = 0.001
 
+
+class VideoRequest(object):
+    seconds = settings.VIDEO_LENGTH
+    location = settings.VIDEO_DIR
+    resolution = settings.VIDEO_RESOLUTION
+    done = False
 
 class Capturer(Thread):
     '''
@@ -22,18 +32,37 @@ class Capturer(Thread):
         self._running = False
 
     def run(self):
-        q, width, height = self._Thread__args
+        outq, inq, width, height = self._Thread__args
         with picamera.PiCamera() as camera:
             camera.resolution = (width, height)
             with picamera.array.PiRGBArray(camera) as stream:
                 while self._running:
-                    while not q.empty():
+                    while not outq.empty():
+                        print 'self.running: %s' % self._running
+                        if not inq.empty():
+                            req = inq.get()
+                            if not os.path.exists(req.location):
+                                os.makedirs(req.location)
+                            camera.resolution = req.resolution
+                            fn = 'motion_vid_%s.h264' % (
+                                datetime.datetime.now().strftime(
+                                    '%Y%m%d%H%M%S')
+                            )
+                            flocname = os.path.join(req.location, fn)
+                            print 'saving to %s' % flocname
+                            camera.start_recording(flocname)
+                            camera.wait_recording(req.seconds)
+                            camera.stop_recording()
+                            print 'recording stopped!'
+                            req.done = True
+                            camera.resolution = (width, height)
                         if not self._running:
                             return
                         time.sleep(QUEUE_WAIT_TIME)
-                    camera.capture(stream, format='rgb')
-                    q.put(stream.array)
-                    stream.truncate(0)
+                    else:
+                        camera.capture(stream, format='rgb')
+                        outq.put(stream.array)
+                        stream.truncate(0)
 
 
 class Detector(object):
@@ -45,7 +74,8 @@ class Detector(object):
         self.threshold = threshold
         self.sensitivity = sensitivity
         self.lastImage = None
-        self.q = Queue()
+        self.outq = Queue()
+        self.inq = Queue()
         self._detecting = 0
 
     def motion(self):
@@ -89,11 +119,23 @@ class Detector(object):
         '''
             Gets an image buffer from our queue.
         '''
-        while self.q.empty():
+        while self.inq.empty():
             time.sleep(QUEUE_WAIT_TIME)
-        return self.q.get()
+        return self.inq.get()
 
-    def start_detect(self, callback):
+    def save_video(self):
+        print 'saving video'
+        req = VideoRequest()
+        self.outq.put(req)
+        while not req.done:
+            # Wait until we have finished recording
+            time.sleep(0.5)
+        self.lastImage = None
+        while not self.inq.empty():
+            self.inq.get()
+        return 0.5
+
+    def start_detect(self, callback=save_video):
         '''
             Wrapper for _start_detect. Catches all exceptions and makes sure
             we terminate our worker thread.
@@ -119,14 +161,12 @@ class Detector(object):
             of seconds.
         '''
         # TODO: Add threading
-        self._detecting = 1
-        self.capturer = Capturer(
-            args=(self.q, self.width, self.height)
-        )
-        self.capturer.start()
+        self.start_detector()
         while self._detecting:
             if self.motion():
-                res = callback()
+                print 'motion found!'
+                # self.stop_detect()
+                res = callback(self)
                 if res:
                     if isinstance(res, (int, float)):
                         time.sleep(res)
@@ -138,15 +178,27 @@ class Detector(object):
                         )
                 else:
                     self.stop_detect()
+                # self.start_detector()
+
+    def start_detector(self):
+        print 'starting detector'
+        self._detecting = 1
+        self.lastImage = None
+        self.capturer = Capturer(
+            args=(self.inq, self.outq, self.width, self.height)
+        )
+        self.capturer.start()
 
     def stop_detect(self):
         '''
             Stops detecting motion and kills our thread
         '''
+        print 'stopping detector'
         # TODO: Add threading
         self.capturer.terminate()
         self._detecting = 0
         self.capturer.join()
+        print 'capturer joined'
 
     stop = stop_detect
 
@@ -158,4 +210,5 @@ if __name__ == '__main__':
         print 'Detected motion @ %s!' % datetime.datetime.now().strftime(
             '%H:%M:%S')
         return 0.3
-    detector.start_detect(callback)
+    # detector.start_detect(callback)
+    detector.start_detect()
