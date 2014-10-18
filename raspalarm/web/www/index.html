@@ -1,7 +1,9 @@
 <html>
     <head>
         <title>RaspAlarm Portal</title>
-        <script src="/jquery-2.1.1.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css" />
+        <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
         <script src="/app.js"></script>
         <style>
             .stream {
@@ -67,6 +69,8 @@
             <button id="stopstream">Stop streaming!</button>
             <button id="arm">Arm!</button>
             <button id="disarm">Disarm!</button>
+            <button id="download_videos">Download videos</button>
         </div>
+        <div id="dialog"></div>
     </body>
 </html>

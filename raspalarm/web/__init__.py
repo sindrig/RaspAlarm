@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 import json
 import os
+import operator
+import datetime
+import glob
 import urlparse
 from wsgiref.util import setup_testing_defaults
 from wsgiref.simple_server import make_server
+from StringIO import StringIO
 
 from raspalarm import get_camera_capturer, CaptureTypes
+from raspalarm.conf import settings
 
 BASE_DIR = os.path.split(os.path.abspath(__file__))[0]
 BLOCK_SIZE = 16 * 4096
@@ -38,6 +43,58 @@ class Portal(object):
             self.capturer.stop()
         return None, {'success': True}
 
+    def download_videos(self, env):
+        def extract_date_from_filename(fn):
+            dtstr = fn.split('_')[-1].split('.')[0]
+            return datetime.datetime.strptime(dtstr, '%Y%m%d%H%M%S')
+        buf = StringIO()
+        file_name_reg = '%s_%s.%s' % (
+            settings.MOTION_VIDEO_PREFIX,
+            '?' * 14,  # number of digits in timestamp
+            settings.MOTION_VIDEO_EXTENSION
+        )
+        file_names = glob.glob(
+            os.path.join(
+                settings.MOTION_VIDEO_DIR,
+                file_name_reg
+            )
+        )
+        files = []
+        for fn in file_names:
+            fn = os.path.split(fn)[-1]
+            dt = extract_date_from_filename(fn)
+            files.append((fn, dt))
+        buf.write('<ul>')
+        for fn, dt in sorted(files, key=operator.itemgetter(1)):
+            buf.write(
+                '<li><a href="/download_video/?v=%s">%s</a></li>' % (
+                    fn,
+                    dt.strftime('%a %-d. %b %Y at %H:%M:%S')
+                )
+            )
+        buf.write('</ul>')
+        buf.seek(0)
+        headers = [('Content-type', 'text/html')]
+        return headers, env.get('wsgi.file_wrapper')(buf, BLOCK_SIZE)
+
+    def download_video(self, env):
+        fn = self._parse_params(env['QUERY_STRING'])['v'][0]
+        full_path = os.path.join(
+            settings.MOTION_VIDEO_DIR,
+            fn
+        )
+        if not os.path.isfile(full_path) or not full_path.endswith(settings.MOTION_VIDEO_EXTENSION):
+            res = '404'
+        else:
+            f = open(full_path, 'r')
+            res = env.get('wsgi.file_wrapper')(f, BLOCK_SIZE)
+        headers = [
+            ('Content-type', 'video/H264'),
+            ('content-Disposition', 'attachment; filename=%s' % fn)
+        ]
+        return headers, res
+
+
 
     def _parse_params(self, qs):
         return urlparse.parse_qs(qs)
@@ -62,6 +119,9 @@ def application(environ, start_response):
     else:
         status = '200 OK'
         headers, res = getattr(p, function)(environ)
+        if res == '404':
+            status = '404 NOT FOUND'
+            res = ''
 
     if not headers:
         if isinstance(res, (str, unicode)):
