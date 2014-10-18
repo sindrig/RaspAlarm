@@ -11,6 +11,10 @@ import picamera
 
 
 class ImageRequest(object):
+    '''
+        The controller will send an object of type ImageRequest and receive
+        the image in it's buffer.
+    '''
     def __init__(self):
         self.stream = io.BytesIO()
         self.finished = 0
@@ -111,7 +115,7 @@ class Streamer(object):
 
     def _start_stream(self, options):
         '''
-            Starts our capturer
+            Starts our capturer.
         '''
         self._streaming = 1
         self.capturer = Capturer(
@@ -130,7 +134,7 @@ class Streamer(object):
 
     def stop_stream(self):
         '''
-            Stops our capturer
+            Stops our capturer.
         '''
         self._streaming = 0
         self.capturer.terminate()
@@ -140,14 +144,18 @@ class Streamer(object):
 
     def is_streaming(self):
         '''
-            So we can know if a stream is currently running
+            So we can know if a stream is currently running.
         '''
         if self._streaming and not self.capturer._running:
             self._streaming = False
         return self._streaming
 
     def get_image(self):
-        assert self._streaming, 'You have to call start_stream'
+        '''
+            Gets an image from our capturer object.
+        '''
+        if not self.is_streaming():
+            self.start_stream()
         return self.capturer.get_image()
 
 if __name__ == '__main__':
