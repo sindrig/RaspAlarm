@@ -9,6 +9,8 @@ class LazySettings(object):
 
     TIME_BEFORE_ARM = 5
 
+    MAIN_LOG_FILE = '/var/log/raspalarm.log'
+
     def __getattr__(self, value):
         return None
 
