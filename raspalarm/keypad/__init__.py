@@ -1,4 +1,8 @@
+import logging
+
 from raspalarm.keypad.monitor import monitor
+
+logger = logging.getLogger(__name__)
 
 def disable():
     monitor.stop()
@@ -13,11 +17,12 @@ def enable(cbok, cbnok):
 if __name__ == '__main__':
     done = False
     def cbok(mon):
-        print 'Correct PW supplied!'
+        logger.debug('Correct PW supplied!')
         mon.stop()
-        print monitor.running()
+
     def cbnok(mon):
-        print 'Wrong PW supplied!'
+        logger.debug('Wrong PW supplied!')
+
     enable(cbok, cbnok)
     try:
         while monitor.running():

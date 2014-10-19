@@ -1,3 +1,6 @@
+import logging
+
+
 class LazySettings(object):
     PASSCODE = '1234'
 
@@ -11,7 +14,39 @@ class LazySettings(object):
 
     MAIN_LOG_FILE = '/var/log/raspalarm.log'
 
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,  # this fixes the problem
+
+        'formatters': {
+            'standard': {
+                'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+            },
+        },
+        'handlers': {
+            'default': {
+                'level':'INFO',
+                'class':'logging.handlers.RotatingFileHandler',
+                'filename': MAIN_LOG_FILE,
+                'maxBytes': 1024*1024*10,  # 10 MB
+                'backupCount': 10,
+                'formatter': 'standard'
+            },
+        },
+        'loggers': {
+            '': {
+                'handlers': ['default'],
+                'level': 'INFO',
+                'propagate': True
+            }
+        }
+    })
+    }
+
     def __getattr__(self, value):
         return None
 
 settings = LazySettings()
+
+def configure_logging():
+    logging.config.dictConfig(settings.LOGGING)

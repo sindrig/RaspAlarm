@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import json
+import logging
 import os
 import operator
 import datetime
@@ -10,10 +11,12 @@ from wsgiref.simple_server import make_server
 from StringIO import StringIO
 
 from raspalarm import get_camera_capturer, CaptureTypes
-from raspalarm.conf import settings
+from raspalarm.conf import settings, configure_logging
 
 BASE_DIR = os.path.split(os.path.abspath(__file__))[0]
 BLOCK_SIZE = 16 * 4096
+
+logger = logging.getLogger(__name__)
 
 
 class Portal(object):
@@ -149,7 +152,8 @@ def get_content_type(function):
 
 
 if __name__ == '__main__':
+    configure_logging()
     PORT = 8080
     httpd = make_server('0.0.0.0', PORT, application)
-    print 'Serving on port %s' % PORT
+    logger.debug('Serving on port %s' % PORT)
     httpd.serve_forever()

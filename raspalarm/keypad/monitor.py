@@ -1,9 +1,12 @@
+import logging
 import time
 from threading import Thread
 
 from raspalarm.keypad import GPIO
-
 from raspalarm.conf import settings
+
+logger = logging.getLogger(__name__)
+
 
 class Monitor(Thread):
     '''
@@ -40,7 +43,7 @@ class Monitor(Thread):
         ):
             pressed_key = self.kp.getKey()
         if pressed_key:
-            print 'Got Key: %s' % pressed_key
+            logger.info('Got Key: %s' % pressed_key)
         while self.kp.getKey() is not None and self._running:
             # Wait until user releases the key
             pass

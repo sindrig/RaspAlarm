@@ -1,13 +1,14 @@
 import traceback
 import time
 import io
+import logging
 from threading import Thread, Event
 from Queue import Queue
 import signal
 
 import picamera
-# from PIL import Image
 
+logger = logging.getLogger(__name__)
 
 
 class ImageRequest(object):
@@ -45,7 +46,7 @@ class Capturer(Thread):
         start = time.time()
         while not req.finished and time.time() - start < 10:
             time.sleep(0.05)
-        print 'image taken in %0.2f seconds' % (time.time() - start)
+        logger.info('image taken in %0.2f seconds', time.time() - start)
         return req.stream
 
     def run(self):
@@ -53,7 +54,6 @@ class Capturer(Thread):
         if not all(isinstance(x, int) or x.isdigit() for x in options.values()):
             raise TypeError('All options should be integers')
         with picamera.PiCamera() as camera:
-            print 'self._running: %s' % self._running
             camera.start_preview()
             camera.resolution = (options['width'], options['height'])
             camera.brightness = options['brightness']
@@ -70,7 +70,7 @@ class Capturer(Thread):
                     last_pic_time = None
                 if self.event.wait(1):
                     req = self.q.get()
-                    print 'Starting capture...'
+                    logger.info('Starting capture...')
                     # time.sleep(0.5)
                     if last_pic_time and time.time() - last_pic_time < 0.5:
                         # If our last image is less then 0.5 seconds old, send
@@ -83,7 +83,7 @@ class Capturer(Thread):
                             # use_video_port=True,
                             thumbnail=None
                         )
-                    print 'Image taken!'
+                    logger.info('Image taken!')
                     req.notify()
                     if self.q.empty():
                         self.event.clear()
@@ -111,7 +111,7 @@ class Streamer(object):
         except KeyboardInterrupt:
             pass
         except Exception:
-            traceback.print_exc()
+            logger.error('Could not start stream', exc_info=True)
 
     def _start_stream(self, options):
         '''
@@ -123,7 +123,7 @@ class Streamer(object):
         )
         self.capturer.start()
         def handler(signum, frame):
-            print 'Killed with signum %s' % signum
+            logger.debug('Killed with signum %s', signum)
             self.stop_stream()
             if signum == signal.SIGINT:
                 raise KeyboardInterrupt()
@@ -163,12 +163,12 @@ if __name__ == '__main__':
     s.start_stream()
     try:
         while s.is_streaming():
-            print len(s.get_image().read())
+            logger.info(str(len(s.get_image().read())))
             time.sleep(2)
     except Exception:
-        import traceback; traceback.print_exc();
+        logger.error('Unknown error', exc_info=True)
     finally:
         try:
             s.stop_stream()
         except Exception:
-            import traceback; traceback.print_exc();
+            logger.error('Could not stop stream', exc_info=True)
