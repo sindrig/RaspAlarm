@@ -12,15 +12,15 @@ def enable(cbok, cbnok):
 
 if __name__ == '__main__':
     done = False
-    def cbok():
-        global done
+    def cbok(mon):
         print 'Correct PW supplied!'
-        done = True
-    def cbnok():
+        mon.stop()
+        print monitor.running()
+    def cbnok(mon):
         print 'Wrong PW supplied!'
     enable(cbok, cbnok)
     try:
-        while not done:
+        while monitor.running():
             pass
-    except KeyboardInterrupt:
+    finally:
         disable()
