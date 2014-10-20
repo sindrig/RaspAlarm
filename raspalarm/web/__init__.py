@@ -109,6 +109,7 @@ def application(environ, start_response):
     setup_testing_defaults(environ)
 
     function = environ.get('PATH_INFO', '').replace('/', '') or 'index.html'
+    logger.info('Request for: %s', function)
     if os.path.exists(os.path.join(BASE_DIR, 'www', function)):
         status = '200 OK'
         headers = [('Content-type', get_content_type(function))]
