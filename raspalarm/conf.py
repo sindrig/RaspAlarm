@@ -14,6 +14,7 @@ class LazySettings(object):
     TIME_BEFORE_ARM = 5
 
     MAIN_LOG_FILE = '/var/log/raspalarm.log'
+    LOGLEVEL = 'DEBUG'
 
     LOGGING = {
         'version': 1,
@@ -26,8 +27,8 @@ class LazySettings(object):
         },
         'handlers': {
             'default': {
-                'level':'INFO',
-                'class':'logging.handlers.RotatingFileHandler',
+                'level': LOGLEVEL,
+                'class': 'logging.handlers.RotatingFileHandler',
                 'filename': MAIN_LOG_FILE,
                 'maxBytes': 1024*1024*10,  # 10 MB
                 'backupCount': 10,
@@ -37,7 +38,7 @@ class LazySettings(object):
         'loggers': {
             '': {
                 'handlers': ['default'],
-                'level': 'INFO',
+                'level': LOGLEVEL,
                 'propagate': True
             }
         }
