@@ -1,4 +1,5 @@
 import logging
+import logging.config
 
 
 class LazySettings(object):
@@ -40,7 +41,6 @@ class LazySettings(object):
                 'propagate': True
             }
         }
-    })
     }
 
     def __getattr__(self, value):
