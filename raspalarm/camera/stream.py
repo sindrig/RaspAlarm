@@ -30,6 +30,7 @@ class Capturer(Thread):
         stream.
     '''
     _running = True
+    AUTO_SHUTDOWN_TIMER = 60
 
     def __init__(self, *args, **kwargs):
         self.event = Event()
@@ -59,7 +60,16 @@ class Capturer(Thread):
             camera.brightness = options['brightness']
             camera.contrast = options['contrast']
             time.sleep(2)
+            last_capture = time.time()
             while self._running:
+                if time.time() - last_capture > self.AUTO_SHUTDOWN_TIMER:
+                    logger.debug(
+                        'Have not received request for image for %d seconds'
+                        ', shutting down',
+                        self.AUTO_SHUTDOWN_TIMER
+                    )
+                    self.terminate()
+                    # TODO: Maybe re-arm?
                 if not self.event.is_set():
                     # We have not yet received a request, so we take a picture
                     # and maybe when we are done we have received a request
@@ -85,6 +95,9 @@ class Capturer(Thread):
                         )
                     logger.info('Image taken!')
                     req.notify()
+
+                    last_capture = time.time()
+
                     if self.q.empty():
                         self.event.clear()
 
@@ -123,8 +136,8 @@ class Streamer(object):
         )
         self.capturer.start()
         def handler(signum, frame):
-            logger.debug('Killed with signum %s', signum)
             self.stop_stream()
+            logger.debug('Killed with signum %s', signum)
             if signum == signal.SIGINT:
                 raise KeyboardInterrupt()
             else:
