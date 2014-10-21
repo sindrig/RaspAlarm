@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import json
-import logging
 import os
 import operator
 import datetime
@@ -10,13 +9,13 @@ from wsgiref.util import setup_testing_defaults
 from wsgiref.simple_server import make_server
 from StringIO import StringIO
 
-from raspalarm import get_camera_capturer, CaptureTypes
-from raspalarm.conf import settings, configure_logging
+from raspalarm.camera import get_camera_capturer, CaptureTypes
+from raspalarm.conf import settings, getLogger
 
 BASE_DIR = os.path.split(os.path.abspath(__file__))[0]
 BLOCK_SIZE = 16 * 4096
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class Portal(object):
@@ -54,7 +53,7 @@ class Portal(object):
         file_name_reg = '%s_%s.%s' % (
             settings.MOTION_VIDEO_PREFIX,
             '?' * 14,  # number of digits in timestamp
-            settings.MOTION_VIDEO_EXTENSION
+            settings.MOTION_VIDEO_FINAL_EXTENSION
         )
         file_names = glob.glob(
             os.path.join(
@@ -86,7 +85,8 @@ class Portal(object):
             settings.MOTION_VIDEO_DIR,
             fn
         )
-        if not os.path.isfile(full_path) or not full_path.endswith(settings.MOTION_VIDEO_EXTENSION):
+        if not os.path.isfile(full_path) or not full_path.endswith(
+                settings.MOTION_VIDEO_FINAL_EXTENSION):
             res = '404'
         else:
             f = open(full_path, 'r')
@@ -153,7 +153,6 @@ def get_content_type(function):
 
 
 if __name__ == '__main__':
-    configure_logging()
     PORT = 8080
     httpd = make_server('0.0.0.0', PORT, application)
     logger.debug('Serving on port %s' % PORT)

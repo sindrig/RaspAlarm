@@ -1,8 +1,7 @@
-import logging
-
 from raspalarm.keypad.monitor import monitor
+from raspalarm.conf import getLogger
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 def disable():
     monitor.stop()

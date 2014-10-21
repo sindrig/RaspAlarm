@@ -1,11 +1,10 @@
-import logging
 import time
 from threading import Thread
 
 from raspalarm.keypad import GPIO
-from raspalarm.conf import settings
+from raspalarm.conf import settings, getLogger
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class Monitor(Thread):
