@@ -7,14 +7,22 @@ class LazySettings(object):
 
     MOTION_VIDEO_LENGTH = 20
     MOTION_VIDEO_DIR = '/tmp/raspalarm/'
-    MOTION_VIDEO_RESOLUTION = (640, 480)
+    MOTION_VIDEO_RESOLUTION = (720, 400)
+    # MOTION_VIDEO_RESOLUTION = (1080, 1000)
     MOTION_VIDEO_PREFIX = 'motion'
-    MOTION_VIDEO_EXTENSION = 'h264'
+    MOTION_VIDEO_EXTENSION = MOTION_VIDEO_FINAL_EXTENSION = 'h264'
+    MOTION_VIDEO_ENABLE_MP4BOX = True
+    MP4BOX_EXECUTABLE = '/usr/bin/MP4Box'
+    MOTION_VIDEO_ENABLE_ZIP = False
 
-    TIME_BEFORE_ARM = 5
+    STREAM_AUTO_SHUTDOWN_TIMER = 60
+
+    TIME_BEFORE_ARM = 3
 
     MAIN_LOG_FILE = '/var/log/raspalarm.log'
     LOGLEVEL = 'DEBUG'
+
+    LOCKFILE = '/var/lock/raspalarm.lock'
 
     LOGGING = {
         'version': 1,
@@ -22,7 +30,8 @@ class LazySettings(object):
 
         'formatters': {
             'standard': {
-                'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+                'format': '%(asctime)s [%(levelname)s] '
+                '%(threadName)s-%(name)s: %(message)s'
             },
         },
         'handlers': {
@@ -44,10 +53,18 @@ class LazySettings(object):
         }
     }
 
+    def __init__(self):
+        logging.config.dictConfig(self.LOGGING)
+
+        if self.MOTION_VIDEO_ENABLE_ZIP:
+            self.MOTION_VIDEO_FINAL_EXTENSION = 'zip'
+        elif self.MOTION_VIDEO_ENABLE_MP4BOX:
+            self.MOTION_VIDEO_FINAL_EXTENSION = 'mp4'
+
+
     def __getattr__(self, value):
         return None
 
 settings = LazySettings()
 
-def configure_logging():
-    logging.config.dictConfig(settings.LOGGING)
+getLogger = logging.getLogger
