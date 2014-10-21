@@ -29,6 +29,9 @@ STREAM_NUM_IMAGE = 0;
 
 var start_stream = function(){
     var data = $('.control select, .control input').map(function(){
+        if($(this).is('[type="radio"]') && !$(this).is(':checked')){
+            return null;
+        }
         return {'name': $(this).attr('name'), 'value': $(this).val()}
     });
     $.ajax('/start_streaming', {

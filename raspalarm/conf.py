@@ -16,6 +16,7 @@ class LazySettings(object):
     MOTION_VIDEO_ENABLE_ZIP = False
 
     STREAM_AUTO_SHUTDOWN_TIMER = 60
+    STREAM_USE_CONTINOUS = False
 
     TIME_BEFORE_ARM = 3
 

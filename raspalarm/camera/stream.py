@@ -52,14 +52,50 @@ class Capturer(Thread):
 
     def run(self):
         options = self._Thread__args[0]
-        if not all(isinstance(x, int) or x.isdigit() for x in options.values()):
-            raise TypeError('All options should be integers')
+        STREAM_USE_CONTINOUS = settings.STREAM_USE_CONTINOUS
+        if options.get('type', '') == 'basic':
+            STREAM_USE_CONTINOUS = False
         with picamera.PiCamera() as camera:
             camera.start_preview()
             camera.resolution = (options['width'], options['height'])
             camera.brightness = options['brightness']
             camera.contrast = options['contrast']
             time.sleep(2)
+            if settings.STREAM_USE_CONTINOUS:
+                logger.debug('Using continuous stream')
+                self.serve_forever_continuous(camera)
+            else:
+                logger.debug('Using basic stream')
+                self.serve_forever_basic(camera)
+
+    def serve_forever_continuous(self, camera):
+        last_serve = time.time()
+        stream = io.BytesIO()
+        for img in camera.capture_continuous(stream, 'jpeg'):
+            if not self._running:
+                break
+            stream.truncate()
+            stream.seek(0)
+            if self.event.is_set():
+                req = self.q.get()
+                while 1:
+                    buf = stream.read()
+                    if not buf:
+                        break
+                    req.stream.write(buf)
+                req.notify()
+                last_serve = time.time()
+                self.event.clear()
+            elif time.time() - last_serve > self.AUTO_SHUTDOWN_TIMER:
+                logger.debug(
+                    'Have not received request for image for %d seconds'
+                    ', shutting down',
+                    self.AUTO_SHUTDOWN_TIMER
+                )
+                self.terminate()
+                # TODO: Maybe re-arm?
+
+    def serve_forever_basic(self, camera):
             last_capture = time.time()
             while self._running:
                 if time.time() - last_capture > self.AUTO_SHUTDOWN_TIMER:
@@ -159,7 +195,7 @@ class Streamer(object):
         '''
             So we can know if a stream is currently running.
         '''
-        if self._streaming and not self.capturer._running:
+        if self._streaming and not self.capturer.is_alive():
             self._streaming = False
         return self._streaming
 

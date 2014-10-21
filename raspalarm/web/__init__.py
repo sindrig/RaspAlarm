@@ -30,7 +30,8 @@ class Portal(object):
         self.capturer = get_camera_capturer(CaptureTypes.STREAMER)
         options = {}
         for k, v in self._parse_params(env['QUERY_STRING']).items():
-            options[k.strip()] = int(v[0])
+            val = int(v[0]) if v[0].isdigit() else v[0]
+            options[k.strip()] = val
 
         self.capturer.start_stream(options)
         return None, {'success': True}
