@@ -1,14 +1,14 @@
 import traceback
 import time
 import io
-import logging
 from threading import Thread, Event
 from Queue import Queue
 import signal
 
-import picamera
+from raspalarm.conf import settings, getLogger
+import camera as picamera
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class ImageRequest(object):
@@ -30,11 +30,11 @@ class Capturer(Thread):
         stream.
     '''
     _running = True
-    AUTO_SHUTDOWN_TIMER = 60
 
     def __init__(self, *args, **kwargs):
         self.event = Event()
         self.q = Queue()
+        self.AUTO_SHUTDOWN_TIMER = settings.STREAM_AUTO_SHUTDOWN_TIMER
         super(Capturer, self).__init__(*args, **kwargs)
 
     def terminate(self):
