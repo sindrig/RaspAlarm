@@ -5,10 +5,10 @@ import time
 import io
 from operator import mul
 from Queue import Queue
-from PIL import Image, ImageChops
 
 # import picamera.array
 import numpy as np
+from PIL import Image, ImageChops
 
 from raspalarm.conf import settings, getLogger
 from raspalarm.modified_threading import Thread
