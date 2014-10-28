@@ -5,6 +5,7 @@ import operator
 import datetime
 import glob
 import urlparse
+import time
 from wsgiref.util import setup_testing_defaults
 from wsgiref.simple_server import make_server
 from StringIO import StringIO
@@ -12,7 +13,7 @@ from StringIO import StringIO
 from raspalarm.camera import get_camera_capturer, CaptureTypes
 from raspalarm.conf import settings, getLogger
 from raspalarm.keypad.monitor import Monitor
-from raspalarm.temperature import reader
+from raspalarm.temperature import reader, db, grapher
 
 BASE_DIR = os.path.split(os.path.abspath(__file__))[0]
 BLOCK_SIZE = 16 * 4096
@@ -124,6 +125,30 @@ class Portal(object):
             self.motion_detector.stop()
             self._arm_monitor()
         return None, {'success': True}
+
+    def view_temps(self, env):
+        # Maybe TODO: Make this customizable?
+        dt = datetime.datetime.now()
+        fn = grapher.get_filename(dt)
+        if not os.path.exists(fn):
+            return None, '404'
+        f = open(fn, 'r')
+        headers = [('Content-Type', 'image/png')]
+        return headers, env['wsgi.file_wrapper'](f, BLOCK_SIZE)
+        timerange = (
+            datetime.datetime.now() - datetime.timedelta(1),
+            datetime.datetime.now()
+        )
+        connection = db.Database()
+        data = connection.get_readings(timerange)
+        logger.debug('Data received')
+        json = {
+            'data': [[timestamp * 1000, temp] for timestamp, temp in data],
+        }
+        return None, json
+        img = grapher.create(x, y)
+        headers = [('Content-Type', 'image/png')]
+        return headers, env['wsgi.file_wrapper'](img, BLOCK_SIZE)
 
     def _arm_monitor(self):
         logger.debug('Arming monitor so we can arm with keypad')

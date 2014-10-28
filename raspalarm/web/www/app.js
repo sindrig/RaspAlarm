@@ -1,22 +1,39 @@
 $(function(){
     $('button').on('click', process_request);
+    $('.temperature span').on('click', view_temps);
+    $('.update-ui').on('click', function(){
+        update_ui(true);
+    });
     $('#dialog').dialog({
         autoOpen: false,
         title: 'Videos available for download',
-        // position: ['center',20],
         width: '500',
-        height: '400'
+        height: '400',
+        modal: true,
+        open: function(event, ui){
+            $(this).load('/download_videos');
+        }
     });
-    $('.update-ui').on('click', function(){
-        update_ui(true);
-    })
+    $('#temps').dialog({
+        autoOpen: false,
+        title: 'Temperature last 24hrs',
+        width: '850',
+        height: '750',
+        modal: true,
+        open: function(event, ui){
+            var img_url = '/view_temps'
+            var img = $('<img>').attr('src', img_url);
+            $(this).empty().append(img);
+            // $(this).load('/view_temps');
+        }
+    });
     update_ui();
 });
 
 var update_ui = function(no_timeout_call){
     no_timeout_call = no_timeout_call || false;
     if(!STREAMING){
-        $('button').not('#download_videos').attr('disabled', 'disabled');
+        $('.buttons button').not('#download_videos').attr('disabled', 'disabled');
         $.ajax('/status', {
             success: function(data){
                 if(data.streaming){
@@ -71,6 +88,7 @@ var process_request = function(evt){
 };
 
 STREAMING = false;
+PAUSED = false;
 STREAM_NUM_IMAGE = 0;
 
 var start_stream = function(){
@@ -94,7 +112,13 @@ var start_stream = function(){
 };
 
 var get_image = function(){
-    if(STREAMING){
+    var pause_unpause = function(){
+        PAUSED = !PAUSED;
+        if(!PAUSED){
+            get_image();
+        }
+    }
+    if(STREAMING && !PAUSED){
         var thisnum = STREAM_NUM_IMAGE++;
         var url = '/get_stream_image?_='+(thisnum);
         var img = $('<img>')
@@ -112,7 +136,7 @@ var get_image = function(){
             if(this.complete){
                 $(this).load();
             }
-        });
+        }).on('click', pause_unpause);
         var stream = $('.stream');
         stream.find('img').addClass('old');
         img.appendTo(stream);
@@ -153,5 +177,9 @@ var disarm = function(){
 };
 
 var download_videos = function(){
-    $('#dialog').load('/download_videos').dialog('open');
+    $('#dialog').dialog('open');
 };
+
+var view_temps = function(){
+    $('#temps').dialog('open');
+}

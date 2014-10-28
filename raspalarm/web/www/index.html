@@ -4,6 +4,8 @@
         <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
         <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css" />
         <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/flot/0.8.2/excanvas.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/flot/0.8.2/jquery.flot.min.js"></script>
         <script src="/app.js"></script>
         <style>
             .stream {
@@ -24,6 +26,9 @@
             .temperature {
                 font-size: 20px;
                 font-weight: bold;
+            }
+            .temperature span {
+                cursor: pointer;
             }
         </style>
     </head>
@@ -85,6 +90,7 @@
             <button id="download_videos">Download videos</button>
         </div>
         <div id="dialog"></div>
+        <div id="temps"></div>
         <span class="ui-icon ui-icon-arrowrefresh-1-e update-ui" style="position:absolute;top:0;right:0;"></span>
     </body>
 </html>
