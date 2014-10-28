@@ -20,6 +20,7 @@ class Database(object):
 
 
     def _get_data(self, query, params=tuple(), single=False):
+        logger.debug(query)
         with sqlite3.connect(settings.DATABASE) as conn:
             cursor = conn.cursor()
             cursor.execute(query, params)
@@ -57,14 +58,16 @@ class Database(object):
         '''
         logger.debug(
             'Getting temperatures from timerange: %s', repr(timerange))
+        timestamp = "strftime('%s', timestamp)"
         if timerange:
             q = (
-                'SELECT timestamp, temp FROM temps '
-                'WHERE timestamp BETWEEN ? and ?'
-            )
+                'SELECT %s, temp FROM temps '
+                'WHERE timestamp BETWEEN ? and ? order by timestamp'
+            ) % timestamp
             return self._get_data(q, timerange)
         else:
-            return self._get_data('SELECT timestamp, temp FROM temps')
+            return self._get_data(
+                'SELECT %s, temp FROM temps order by timestamp' % timestamp)
 
     def get_latest_reading(self):
         logger.debug('Getting latest temperature reading')
@@ -76,11 +79,11 @@ class Database(object):
 if __name__ == '__main__':
     from raspalarm.temperature.reader import read
     db = Database()
-    value = read()
-    db.insert_reading(value)
-    print db.get_latest_reading()
+    # value = read()
+    # db.insert_reading(value)
+    # print db.get_latest_reading()
     rng = (
-        datetime.datetime.now() - datetime.timedelta(minutes=1),
+        datetime.datetime.now() - datetime.timedelta(minutes=60),
         datetime.datetime.now()
     )
     print db.get_readings(rng)
