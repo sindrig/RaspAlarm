@@ -33,6 +33,8 @@ class LazySettings(object):
 
     DATABASE = BASE_DIR + 'db.sqlite3'
 
+    TEMPERATURE_GRAPH_DIR = 'graphs/'
+
     LOGGING = {
         'version': 1,
         'disable_existing_loggers': False,  # this fixes the problem
