@@ -11,6 +11,8 @@ from StringIO import StringIO
 
 from raspalarm.camera import get_camera_capturer, CaptureTypes
 from raspalarm.conf import settings, getLogger
+from raspalarm.keypad.monitor import Monitor
+from raspalarm.temperature import reader
 
 BASE_DIR = os.path.split(os.path.abspath(__file__))[0]
 BLOCK_SIZE = 16 * 4096
@@ -20,6 +22,14 @@ logger = getLogger(__name__)
 
 class Portal(object):
     capturer = None
+    motion_detector = None
+
+    def status(self, env):
+        res = {}
+        res['streaming'] = self.capturer and self.capturer.is_streaming()
+        res['armed'] = self.motion_detector and self.motion_detector.is_alive()
+        res['temp'] = '%0.2f' % reader.read()
+        return None, res
 
     def start_streaming(self, env):
         if self.capturer and self.capturer.is_streaming():
@@ -37,9 +47,11 @@ class Portal(object):
         return None, {'success': True}
 
     def get_stream_image(self, env):
-        stream = self.capturer.get_image()
-        headers = [('Content-Type', 'image/jpeg')]
-        return headers, env['wsgi.file_wrapper'](stream, BLOCK_SIZE)
+        if self.capturer:
+            stream = self.capturer.get_image()
+            headers = [('Content-Type', 'image/jpeg')]
+            return headers, env['wsgi.file_wrapper'](stream, BLOCK_SIZE)
+        return None, '404'
 
     def stop_streaming(self, env):
         if self.capturer:
@@ -98,7 +110,24 @@ class Portal(object):
         ]
         return headers, res
 
+    def arm_motion(self, env=None):
+        self.capturer = None
+        self.motion_detector = get_camera_capturer(CaptureTypes.MOTION)
+        self.motion_detector.start()
+        def keypad_fail():
+            logger.error('WRONG PASSWORD SUPPLIED. TODO: NOTIFY?')
+        Monitor.arm(self.disarm_motion, keypad_fail)
+        return None, {'success': True}
 
+    def disarm_motion(self, env=None):
+        if self.motion_detector:
+            self.motion_detector.stop()
+            self._arm_monitor()
+        return None, {'success': True}
+
+    def _arm_monitor(self):
+        logger.debug('Arming monitor so we can arm with keypad')
+        Monitor.arm(self.arm_motion, lambda: 0)
 
     def _parse_params(self, qs):
         return urlparse.parse_qs(qs)
@@ -154,6 +183,8 @@ def get_content_type(function):
 
 
 if __name__ == '__main__':
+    p._arm_monitor()
+
     PORT = 8080
     httpd = make_server('0.0.0.0', PORT, application)
     logger.debug('Serving on port %s' % PORT)

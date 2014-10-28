@@ -5,13 +5,13 @@ import time
 import io
 from operator import mul
 from Queue import Queue
-from threading import Thread
 from PIL import Image, ImageChops
 
 # import picamera.array
 import numpy as np
 
 from raspalarm.conf import settings, getLogger
+from raspalarm.modified_threading import Thread
 import camera as picamera
 import packer
 
@@ -87,11 +87,16 @@ class Capturer(Thread):
 
                                 logger.info(
                                     'Recording for %d seconds',
-                                    settings.MOTION_VIDEO_LENGTH * 3 / 4
+                                    settings.MOTION_VIDEO_LENGTH * 5 / 4
                                 )
                                 camera.wait_recording(
-                                    settings.MOTION_VIDEO_LENGTH * 3 / 4
+                                    settings.MOTION_VIDEO_LENGTH * 5 / 4
                                 )
+
+                                if not self._running:
+                                    logger.info(
+                                        'Got disabled before end of recording')
+                                    break
 
                                 logger.debug('Stopped recording...')
 
@@ -172,9 +177,10 @@ class Detector(Thread):
         100: 100,
     }
 
-    def __init__(self, threshold, sensitivity, callback=None, *args, **kwargs):
-        self.threshold = threshold
-        self.sensitivity = sensitivity
+    def __init__(self, threshold=None, sensitivity=None, callback=None,
+                 *args, **kwargs):
+        self.threshold = threshold or settings.MOTION_THRESHOLD
+        self.sensitivity = sensitivity or settings.MOTION_SENSITIVITY
         self.lastImage = None
         self.outq = Queue()
         self.inq = Queue()
@@ -192,19 +198,30 @@ class Detector(Thread):
             # Possibly in case we get abruptly closed
             return False
         li = self.lastImage  # Last image
-        cur_avg = self._get_average_value(ci)
+
         min_avg, max_avg = 85, 200
-        if cur_avg < min_avg or cur_avg > max_avg and li is not None:
-            brightness_adjustment = 10 if cur_avg < min_avg else -10
-            if self.set_brightness(
-                self.current_brightness + brightness_adjustment
-            ):
-                # Clear all images we have so we don't detect motion because
-                # of our adjustments
-                self.lastImage = None
-                while self.get_buffer() is not None:
-                    pass
-                return False
+
+        cur_avg = self._get_average_value(ci)
+        if li is not None:
+            last_avg = self._get_average_value(li)
+        else:
+            last_avg = cur_avg
+        current_distance_from_border = min(
+            abs(cur_avg-max_avg),
+            abs(cur_avg-min_avg)
+        )
+        if abs(cur_avg-last_avg) < current_distance_from_border:
+            if cur_avg < min_avg or cur_avg > max_avg and li is not None:
+                brightness_adjustment = 10 if cur_avg < min_avg else -10
+                if self.set_brightness(
+                    self.current_brightness + brightness_adjustment
+                ):
+                    # Clear all images we have so we don't detect motion
+                    # because of our adjustments
+                    self.lastImage = None
+                    while self.get_buffer() is not None:
+                        pass
+                    return False
         try:
             if not li is None:
                 diff_count = 0L
@@ -268,6 +285,9 @@ class Detector(Thread):
         while not req.done and self.enabled():
             # Wait until we have finished recording
             time.sleep(0.5)
+        if not req.done:
+            # We dont save unfinished recordings
+            return 0
         self.lastImage = None
         try:
             packer.pack_video(req.file_name)

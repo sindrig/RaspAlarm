@@ -1,11 +1,12 @@
 import traceback
 import time
 import io
-from threading import Thread, Event
+from threading import Event
 from Queue import Queue
 import signal
 
 from raspalarm.conf import settings, getLogger
+from raspalarm.modified_threading import Thread
 import camera as picamera
 
 logger = getLogger(__name__)
@@ -39,6 +40,8 @@ class Capturer(Thread):
 
     def terminate(self):
         self._running = False
+
+    stop = terminate
 
     def get_image(self):
         req = ImageRequest()
@@ -116,8 +119,6 @@ class Capturer(Thread):
                     last_pic_time = None
                 if self.event.wait(1):
                     req = self.q.get()
-                    logger.info('Starting capture...')
-                    # time.sleep(0.5)
                     if last_pic_time and time.time() - last_pic_time < 0.5:
                         # If our last image is less then 0.5 seconds old, send
                         # that one to reduce wait time
@@ -129,7 +130,6 @@ class Capturer(Thread):
                             # use_video_port=True,
                             thumbnail=None
                         )
-                    logger.info('Image taken!')
                     req.notify()
 
                     last_capture = time.time()
@@ -146,6 +146,7 @@ class Streamer(object):
         'brightness': 50,
         'contrast': 0
     }
+    capturer = None
 
     def start_stream(self, options={}):
         '''
@@ -171,15 +172,6 @@ class Streamer(object):
             args=(options, )
         )
         self.capturer.start()
-        def handler(signum, frame):
-            self.stop_stream()
-            logger.debug('Killed with signum %s', signum)
-            if signum == signal.SIGINT:
-                raise KeyboardInterrupt()
-            else:
-                raise OSError('Unknown error')
-        signal.signal(signal.SIGTERM, handler)
-        signal.signal(signal.SIGINT, handler)
 
     def stop_stream(self):
         '''
@@ -188,8 +180,10 @@ class Streamer(object):
         self._streaming = 0
         self.capturer.terminate()
         self.capturer.join()
+        self.get_image = lambda slf: 0
 
     stop = stop_stream
+    terminate = stop
 
     def is_streaming(self):
         '''
@@ -197,7 +191,11 @@ class Streamer(object):
         '''
         if self._streaming and not self.capturer.is_alive():
             self._streaming = False
+        elif self.capturer and self.capturer.is_alive():
+            self._streaming = True
         return self._streaming
+
+    is_alive = is_streaming
 
     def get_image(self):
         '''

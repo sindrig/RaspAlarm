@@ -1,11 +1,10 @@
 import time
-from threading import Thread
 
 from raspalarm.keypad import GPIO
 from raspalarm.conf import settings, getLogger
+from raspalarm.modified_threading import Thread
 
 logger = getLogger(__name__)
-
 
 class Monitor(Thread):
     '''
@@ -18,6 +17,27 @@ class Monitor(Thread):
     passcode = None
     callbackFail = None
 
+    __MONITOR = None
+
+    @classmethod
+    def get_monitor(cls):
+        cls.disarm()
+        cls.__MONITOR = cls()
+        return cls.__MONITOR
+
+    @classmethod
+    def arm(cls, callbackSuccess, callbackFail):
+        monitor = cls.get_monitor()
+        monitor.start(callbackSuccess, callbackFail)
+
+    @classmethod
+    def disarm(cls):
+        if cls.__MONITOR:
+            if cls.__MONITOR.is_alive():
+                cls.__MONITOR.stop()
+                time.sleep(0.5)
+            cls.__MONITOR = None
+
     def __init__(self, *args, **kwargs):
         self.kp = GPIO.Keypad()
         super(Monitor, self).__init__(*args, **kwargs)
@@ -26,6 +46,7 @@ class Monitor(Thread):
         '''
             Stops monitoring user input
         '''
+        logger.debug('Terminating...')
         self._running = False
 
     def get_next_key(self):
@@ -65,9 +86,9 @@ class Monitor(Thread):
                         str(x) for x in current_code
                     ).rstrip('#')
                     if current_input == self.passcode:
-                        self.callbackSuccess(self)
+                        self.callbackSuccess()
                     else:
-                        self.callbackFail(self)
+                        self.callbackFail()
                     current_code = []
             else:
                 current_code = []
@@ -94,4 +115,12 @@ class Monitor(Thread):
         '''
         return self._running
 
-monitor = Monitor()
+if __name__ == '__main__':
+    print 'starting for the first time'
+    Monitor.arm(lambda: 1, lambda: 1)
+    time.sleep(1)
+    # monitor.stop()
+    print 'starting for the second time'
+    Monitor.arm(lambda: 1, lambda: 1)
+    time.sleep(1)
+    Monitor.disarm()

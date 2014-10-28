@@ -3,27 +3,35 @@ import logging.config
 
 
 class LazySettings(object):
+
+    BASE_DIR = '/mnt/ext/'
+
     PASSCODE = '1234'
 
+    MOTION_THRESHOLD = 30
+    MOTION_SENSITIVITY = 55
     MOTION_VIDEO_LENGTH = 20
-    MOTION_VIDEO_DIR = '/tmp/raspalarm/'
+    MOTION_VIDEO_DIR = BASE_DIR + 'videos/'
     MOTION_VIDEO_RESOLUTION = (720, 400)
-    # MOTION_VIDEO_RESOLUTION = (1080, 1000)
     MOTION_VIDEO_PREFIX = 'motion'
     MOTION_VIDEO_EXTENSION = MOTION_VIDEO_FINAL_EXTENSION = 'h264'
     MOTION_VIDEO_ENABLE_MP4BOX = True
-    MP4BOX_EXECUTABLE = '/usr/bin/MP4Box'
     MOTION_VIDEO_ENABLE_ZIP = False
+
+    MP4BOX_EXECUTABLE = '/usr/bin/MP4Box'
 
     STREAM_AUTO_SHUTDOWN_TIMER = 60
     STREAM_USE_CONTINOUS = False
 
     TIME_BEFORE_ARM = 3
 
-    MAIN_LOG_FILE = '/var/log/raspalarm.log'
+    MAIN_LOG_FILE = BASE_DIR + 'raspalarm.log'
+
     LOGLEVEL = 'DEBUG'
 
     LOCKFILE = '/var/lock/raspalarm.lock'
+
+    DATABASE = BASE_DIR + 'db.sqlite3'
 
     LOGGING = {
         'version': 1,
