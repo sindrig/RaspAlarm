@@ -1,7 +1,5 @@
 #!/usr/bin/python
-# Disclaimer: This is not originally my work, I have modified it
-# to suit my needs. All credit goes to Chris Crumpacker
-# (chris@chriscrumpacker.com).
+# Work derived from matrix_keypad
 # matrix_keypad on pypi: https://pypi.python.org/pypi/matrix_keypad
 
 import RPi.GPIO as GPIO
