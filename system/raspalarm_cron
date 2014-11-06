@@ -1,0 +1,1 @@
+*/5 * * * * root /usr/local/bin/raspa.py temp graph > /dev/null 2>&1

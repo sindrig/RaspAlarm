@@ -3,15 +3,19 @@
 # Setup script
 # 1: install module
 # 2: add bin/*.py to location in $PATH
-# 3: add system files - TODO
+# 3: add system files
 
 import glob
-try:
-    from setuptools import setup, find_packages
-except ImportError:
-    import distribute_setup
-    distribute_setup.use_setuptools()
-    from setuptools import setup, find_packages
+import shutil
+import subprocess
+from setuptools import setup, find_packages
+
+l, e = subprocess.Popen(
+    ['/usr/sbin/service', 'raspalarm', 'stop']
+).communicate()
+
+if e:
+    print e
 
 setup(
     name='RaspAlarm',
@@ -28,3 +32,18 @@ setup(
     ],
     scripts=glob.glob('bin/*.py')
 )
+
+files_to_move = [
+    ('system/raspalarm_cron', '/etc/cron.d/raspalarm'),
+    ('system/raspalarm_service', '/etc/init.d/raspalarm')
+]
+
+for src, dst in files_to_move:
+    shutil.copyfile(src, dst)
+
+l, e = subprocess.Popen(
+    ['/usr/sbin/service', 'raspalarm', 'start']
+).communicate()
+
+if e:
+    print e

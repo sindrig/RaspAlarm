@@ -6,6 +6,7 @@ import time
 
 from raspalarm.conf import getLogger, settings
 from raspalarm.temperature import db, reader
+from raspalarm.web import serve_forever
 
 logger = getLogger('CMD')
 
@@ -45,3 +46,5 @@ if __name__ == '__main__':
             insert_reading()
         if arg == 'graph':
             create_graph()
+        if arg == 'web':
+            serve_forever()

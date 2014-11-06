@@ -9,16 +9,10 @@
 # Description:       starts raspalarm using start-stop-daemon
 ### END INIT INFO
 
-export PYTHONPATH=/home/pi/RaspAlarm:$PYTHONPATH
-
-echo $PYTHONPATH
-
-dir="/home/pi/RaspAlarm/raspalarm/web"
-#user="pi"
 user="root"
-cmd="python __init__.py"
+cmd="/usr/local/bin/raspa.py web"
 
-name=$(basename $dir)
+name="raspalarm"
 pid_file="/var/run/$name.pid"
 stdout_log="/var/log/$name.log"
 stderr_log="/var/log/$name.err"
@@ -37,7 +31,6 @@ case "$1" in
         echo "Already started"
     else
         echo "Starting $name"
-        cd "$dir"
             sudo -u "$user" $cmd > "$stdout_log" 2> "$stderr_log" \
         & echo $! > "$pid_file"
         sleep 0.5
