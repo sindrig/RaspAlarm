@@ -11,6 +11,7 @@ class LazySettings(object):
     MOTION_THRESHOLD = 30
     MOTION_SENSITIVITY = 55
     MOTION_VIDEO_LENGTH = 20
+    MOTION_VIDEO_LENGTH = 15
     MOTION_VIDEO_DIR = BASE_DIR + 'videos/'
     MOTION_VIDEO_RESOLUTION = (720, 400)
     MOTION_VIDEO_PREFIX = 'motion'
@@ -34,6 +35,8 @@ class LazySettings(object):
     DATABASE = BASE_DIR + 'db.sqlite3'
 
     TEMPERATURE_GRAPH_DIR = 'graphs/'
+
+    SERVE_STATIC = True
 
     LOGGING = {
         'version': 1,

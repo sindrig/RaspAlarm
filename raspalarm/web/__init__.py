@@ -164,6 +164,8 @@ def application(environ, start_response):
     setup_testing_defaults(environ)
 
     function = environ.get('PATH_INFO', '').replace('/', '') or 'index.html'
+    if function == 'index.html' and settings.SERVE_STATIC:
+        function = 'index.local.html'
     logger.info('Request for: %s', function)
     if os.path.exists(os.path.join(BASE_DIR, 'www', function)):
         status = '200 OK'
@@ -207,7 +209,7 @@ def get_content_type(function):
     return 'text/plain'
 
 
-if __name__ == '__main__':
+def serve_forever():
     p._arm_monitor()
 
     PORT = 8080
