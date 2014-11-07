@@ -6,7 +6,8 @@
 # 3: add system files
 
 import glob
-import shutil
+import os
+import sys
 import subprocess
 from setuptools import setup, find_packages
 
@@ -28,18 +29,22 @@ setup(
         'numpy==1.6.2',
         'PIL==1.1.7',
         'picamera==1.8',
-        # 'matplotlib==1.1.1rc2',
+        'matplotlib==1.1.1rc2',
+        'requests',
+        'pushbullet.py',
+        'python-magic'
+    ],
+    data_files=[
+        ('/etc/init.d', ['system/raspalarm']),
+        ('/etc/cron.d', ['system/raspalarm.cron']),
+        ('/etc/raspalarm', ['system/raspalarm.conf']),
+        (
+            os.path.join(sys.prefix, 'raspalarm', 'web', 'www'),
+            glob.glob('raspalarm/web/www/*')
+        )
     ],
     scripts=glob.glob('bin/*.py')
 )
-
-files_to_move = [
-    ('system/raspalarm_cron', '/etc/cron.d/raspalarm'),
-    ('system/raspalarm_service', '/etc/init.d/raspalarm')
-]
-
-for src, dst in files_to_move:
-    shutil.copyfile(src, dst)
 
 l, e = subprocess.Popen(
     ['/usr/sbin/service', 'raspalarm', 'start']
