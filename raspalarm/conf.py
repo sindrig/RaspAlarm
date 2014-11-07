@@ -1,3 +1,4 @@
+import os
 import logging
 import logging.config
 
@@ -38,6 +39,8 @@ class LazySettings(object):
 
     SERVE_STATIC = True
 
+    PUSHBULLET_API_KEY = ''
+
     LOGGING = {
         'version': 1,
         'disable_existing_loggers': False,  # this fixes the problem
@@ -69,11 +72,26 @@ class LazySettings(object):
 
     def __init__(self):
         logging.config.dictConfig(self.LOGGING)
+        logger = logging.getLogger(__name__)
 
         if self.MOTION_VIDEO_ENABLE_ZIP:
             self.MOTION_VIDEO_FINAL_EXTENSION = 'zip'
         elif self.MOTION_VIDEO_ENABLE_MP4BOX:
             self.MOTION_VIDEO_FINAL_EXTENSION = 'mp4'
+
+        try:
+            cf = os.path.join('/etc', 'raspalarm', 'raspalarm.conf')
+            if os.path.exists(cf):
+                ext_config = {}
+                execfile(cf, ext_config)
+                for key, value in ext_config.items():
+                    if hasattr(self, key):
+                        setattr(self, key, value)
+            else:
+                logger.debug('Conf file %s not found' % cf)
+        except Exception as e:
+            logger.error('Could not parse config file', exc_info=True)
+
 
 
     def __getattr__(self, value):
