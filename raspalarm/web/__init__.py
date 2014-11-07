@@ -6,6 +6,7 @@ import datetime
 import glob
 import urlparse
 import time
+import sys
 from wsgiref.util import setup_testing_defaults
 from wsgiref.simple_server import make_server
 from StringIO import StringIO
@@ -15,7 +16,7 @@ from raspalarm.conf import settings, getLogger
 from raspalarm.keypad.monitor import Monitor
 from raspalarm.temperature import reader, db, grapher
 
-BASE_DIR = os.path.split(os.path.abspath(__file__))[0]
+BASE_DIR = os.path.join(sys.prefix, 'raspalarm', 'web')
 BLOCK_SIZE = 16 * 4096
 
 logger = getLogger(__name__)

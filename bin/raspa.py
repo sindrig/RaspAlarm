@@ -34,7 +34,6 @@ def create_graph():
     for timestamp, temp in data:
         x.append(datetime.datetime.fromtimestamp(float(timestamp)))
         y.append(temp)
-    print x, y
     grapher.create(x, y, fn)
 
 
