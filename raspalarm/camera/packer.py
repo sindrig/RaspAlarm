@@ -39,6 +39,8 @@ def pack_video(file_name):
             z.write(full_file_name, arcname=os.path.split(full_file_name)[1])
         os.remove(full_file_name)
         logger.debug('Removing old file')
+        full_file_name = new_file_name
+    return full_file_name
 
 def get_file_name(loc, original_name, ext, preserve=0):
     '''

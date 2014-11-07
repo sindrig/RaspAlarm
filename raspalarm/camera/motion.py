@@ -12,6 +12,7 @@ from PIL import Image, ImageChops
 
 from raspalarm.conf import settings, getLogger
 from raspalarm.modified_threading import Thread
+from raspalarm.notify import notify_motion, notify_video
 import camera as picamera
 import packer
 
@@ -290,9 +291,11 @@ class Detector(Thread):
             return 0
         self.lastImage = None
         try:
-            packer.pack_video(req.file_name)
+            new_filename = packer.pack_video(req.file_name)
         except packer.PackingError:
             logger.error('Failed when trying to pack video!', exc_info=True)
+        else:
+            notify_video(new_filename)
         while not self.inq.empty():
             self.inq.get()
         logger.debug('save video finished (main)')
@@ -341,6 +344,7 @@ class Detector(Thread):
             if not self.capturer.is_alive():
                 return
             if self.motion():
+                notify_motion()
                 logger.debug('motion found!')
                 res = self.callback()
                 logger.debug('Callback returned %s', repr(res))
