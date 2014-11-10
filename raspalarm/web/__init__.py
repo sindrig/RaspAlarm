@@ -15,6 +15,7 @@ from raspalarm.camera import get_camera_capturer, CaptureTypes
 from raspalarm.conf import settings, getLogger
 from raspalarm.keypad.monitor import Monitor
 from raspalarm.temperature import reader, db, grapher
+from raspalarm.notify import notify_simple
 
 BASE_DIR = os.path.join(sys.prefix, 'raspalarm', 'web')
 BLOCK_SIZE = 16 * 4096
@@ -117,8 +118,10 @@ class Portal(object):
         self.motion_detector = get_camera_capturer(CaptureTypes.MOTION)
         self.motion_detector.start()
         def keypad_fail():
-            logger.error('WRONG PASSWORD SUPPLIED. TODO: NOTIFY?')
+            logger.error('WRONG PASSWORD SUPPLIED.')
+            notify_simple('Wrong unlock code!')
         Monitor.arm(self.disarm_motion, keypad_fail)
+        notify_simple('System armed!')
         return None, {'success': True}
 
     def disarm_motion(self, env=None):
@@ -136,33 +139,45 @@ class Portal(object):
         f = open(fn, 'r')
         headers = [('Content-Type', 'image/png')]
         return headers, env['wsgi.file_wrapper'](f, BLOCK_SIZE)
-        timerange = (
-            datetime.datetime.now() - datetime.timedelta(1),
-            datetime.datetime.now()
-        )
-        connection = db.Database()
-        data = connection.get_readings(timerange)
-        logger.debug('Data received')
-        json = {
-            'data': [[timestamp * 1000, temp] for timestamp, temp in data],
-        }
-        return None, json
-        img = grapher.create(x, y)
-        headers = [('Content-Type', 'image/png')]
-        return headers, env['wsgi.file_wrapper'](img, BLOCK_SIZE)
 
-    def _arm_monitor(self):
+    def _arm_monitor(self, notify=True):
         logger.debug('Arming monitor so we can arm with keypad')
         Monitor.arm(self.arm_motion, lambda: 0)
+        if notify:
+            notify_simple('System disarmed!')
 
     def _parse_params(self, qs):
         return urlparse.parse_qs(qs)
 
 p = Portal()
 
+def auth(environ):
+    token = environ.get('HTTP_AUTHORIZATION')
+    if token:
+        scheme, data = token.split(None, 1)
+        if not scheme.lower() == 'basic':
+            return False
+        username, password = data.decode('base64').split(':', 1)
+        if not settings.USERS.get(username, '') == password:
+            return False
+        environ['REMOTE_USER'] = username
+        del environ['HTTP_AUTHORIZATION']
+        return True
+    return False
+
 
 def application(environ, start_response):
     setup_testing_defaults(environ)
+
+    if not auth(environ):
+        body = 'Authentication needed'
+        headers = [
+            ('Content-type', 'text/plain'),
+            ('Content-length', str(len(body))),
+            ('WWW-Authenticate', 'Basic realm="RaspAlarm"')
+        ]
+        start_response('401 Unauthorized', headers)
+        return [body]
 
     function = environ.get('PATH_INFO', '').replace('/', '') or 'index.html'
     if function == 'index.html' and settings.SERVE_STATIC:
@@ -211,7 +226,7 @@ def get_content_type(function):
 
 
 def serve_forever():
-    p._arm_monitor()
+    p._arm_monitor(False)
 
     PORT = 8080
     httpd = make_server('0.0.0.0', PORT, application)
