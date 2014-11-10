@@ -20,6 +20,9 @@ class LazySettings(object):
     MOTION_VIDEO_ENABLE_MP4BOX = True
     MOTION_VIDEO_ENABLE_ZIP = False
 
+    CAMERA_FLIP_VERTICAL = True
+    CAMERA_FLIP_HORIZONTAL = True
+
     MP4BOX_EXECUTABLE = '/usr/bin/MP4Box'
 
     STREAM_AUTO_SHUTDOWN_TIMER = 60
@@ -68,6 +71,10 @@ class LazySettings(object):
                 'propagate': True
             }
         }
+    }
+
+    USERS = {
+        'sindri': '1234'
     }
 
     def __init__(self):
