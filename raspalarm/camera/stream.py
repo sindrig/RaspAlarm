@@ -63,6 +63,8 @@ class Capturer(Thread):
             camera.resolution = (options['width'], options['height'])
             camera.brightness = options['brightness']
             camera.contrast = options['contrast']
+            camera.vflip = settings.CAMERA_FLIP_VERTICAL
+            camera.hflip = settings.CAMERA_FLIP_HORIZONTAL
             time.sleep(2)
             if settings.STREAM_USE_CONTINOUS:
                 logger.debug('Using continuous stream')

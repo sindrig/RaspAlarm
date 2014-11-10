@@ -63,6 +63,8 @@ class Capturer(Thread):
         outq, inq, width, height = self._Thread__args
         with picamera.PiCamera() as camera:
             camera.resolution = settings.MOTION_VIDEO_RESOLUTION
+            camera.vflip = settings.CAMERA_FLIP_VERTICAL
+            camera.hflip = settings.CAMERA_FLIP_HORIZONTAL
             br = 5000000
             logger.debug('b:%d', camera.brightness)
             logger.debug('bitrate: %d', br)
